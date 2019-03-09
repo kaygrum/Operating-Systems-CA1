@@ -1,3 +1,5 @@
 ﻿  main.c
-e:\college\4th year\operatoing systems\project1\project1\main.c(82): warning C4013: 'rand' undefined; assuming extern returning int
-  Project1.vcxproj -> E:\College\4th year\Operatoing Systems\Project1\Debug\Project1.exe
+e:\college\4th year\operatoing systems\ca1\project1\project1\main.c(90): warning C4047: '=': 'char' differs in levels of indirection from 'char [2]'
+e:\college\4th year\operatoing systems\ca1\project1\project1\main.c(69): warning C4047: 'initializing': 'char' differs in levels of indirection from 'char [2]'
+e:\college\4th year\operatoing systems\ca1\project1\project1\main.c(41): warning C4101: 'physicaladdresspage': unreferenced local variable
+  Project1.vcxproj -> E:\College\4th year\Operatoing Systems\CA1\Project1\Debug\Project1.exe

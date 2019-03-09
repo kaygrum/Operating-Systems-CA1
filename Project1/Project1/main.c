@@ -1,4 +1,7 @@
+#define _CRT_SECURE_NO_DEPRECATE
 #include <stdio.h>
+#include <stdlib.h>
+
 // 16 bit virtual memory hexidecimal 0xFFFF
 //Offset 8 bit
 //256 bytes per page
@@ -35,15 +38,61 @@
 int main()
 {
 	int physicaladdress[65536];
+	int physicaladdresspage[256];
+	char process1[] = { 'A','B','C','D','E','F','G','H','I','J','K','L' };
 	int lengthOfPhysicalAddrArray = sizeof(physicaladdress) / sizeof(int);
+	int lengthOfProcessElements = sizeof(process1) / sizeof(char);
+	int randomAdressInsertProcess[12];
 
-	for (int i = 0; i < lengthOfPhysicalAddrArray ; i++)
+	for (int i = 0; i < lengthOfProcessElements; i++)
 	{
-		physicaladdress[i] = i;
-		printf(" %d, 0x%X", i,i);
+		randomAdressInsertProcess[i]= rand() % (65536 - 0 + 1) + 0;
+		printf("0x%X", randomAdressInsertProcess[i]);
 		printf("\n");
 	}
 
+
+	//Open file
+	FILE *physical;
+	physical = fopen("physical_memory.txt", "w");
+	if (physical == NULL) {
+		printf("couldnt open");
+		exit(0);
+	}
+
+	int insertProcess = rand() % (65536 - 0 + 1) + 0;
+
+	//Writing Physical address info
+	int a = 0, b = 256, page = 0;;
+	fprintf(physical, " Address|	Frame	|	Content");
+	fprintf(physical, "\n");
+	char process = "X";
+	for (int i = 0; i < lengthOfPhysicalAddrArray ; i++)
+	{
+
+			if (i == a || i < b) {
+
+			}
+			else {
+				page++, a = a + 256, b = b + 256;
+			}
+			for (int j = 0; j < lengthOfProcessElements; j++)
+			{
+				if (i == randomAdressInsertProcess[j])
+				{
+					process = process1[j];
+				}
+			}
+
+			physicaladdress[i] = i;
+			fprintf(physical, " 0x%X	|	%d	|	%c", i, page, process);
+			fprintf(physical, "\n");
+			process = "X";
+		
+	}
+
+	//close file
+	fclose(physical);
 
 
 	//fillProcess();
