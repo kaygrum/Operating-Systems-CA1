@@ -39,20 +39,43 @@ int main()
 {
 	int physicaladdress[65536];
 	int physicaladdresspage[256];
-	char process1[] = { 'A','B','C','D','E','F','G','H','I','J','K','L' };
+	char process1[2764] ;
 	int lengthOfPhysicalAddrArray = sizeof(physicaladdress) / sizeof(int);
 	int lengthOfProcessElements = sizeof(process1) / sizeof(char);
-	int randomAdressInsertProcess[12];
+	int randomAdressInsertProcess[2764];
 
+	int takenPhysicalAddress[2764];
+	int takenPhysicalPage[2764];
+	char takenPhysicalContent[2764];
+	int physicalPage[256];
+	int startAddress[256];
+	int endAddress[256];
+
+	FILE *readProcess1;
+	//char = 1 byte. 
+	//pulling from a text file a paragraph with 2764 characters which is equal to 2764 bytes
+	readProcess1=fopen("Process1.txt", "r");
+	if (readProcess1 == NULL)
+	{
+		printf("couldnt open");
+		exit(0);
+	}
+	char ch;
+	int i = 0;
+	while ((ch = fgetc(readProcess1)) != EOF) {
+		process1[i] = ch;
+		i++;
+	}
+	fclose(readProcess1);
+
+	//generating random Address for process
 	for (int i = 0; i < lengthOfProcessElements; i++)
 	{
 		randomAdressInsertProcess[i]= rand() % (65536 - 0 + 1) + 0;
-		printf("0x%X", randomAdressInsertProcess[i]);
-		printf("\n");
 	}
 
 
-	//Open file
+	//Open file for physical memory
 	FILE *physical;
 	physical = fopen("physical_memory.txt", "w");
 	if (physical == NULL) {
@@ -64,35 +87,75 @@ int main()
 
 	//Writing Physical address info
 	int a = 0, b = 256, page = 0;;
+	physicalPage[0] = page;
+	startAddress[0] = a;
+	endAddress[0] = b-1;
+	int g = 0;
 	fprintf(physical, " Address|	Frame	|	Content");
 	fprintf(physical, "\n");
-	char process = "X";
+	char process = '-';
 	for (int i = 0; i < lengthOfPhysicalAddrArray ; i++)
 	{
-
-			if (i == a || i < b) {
-
+			if (i == a || i < b) 
+			{
 			}
-			else {
+			else 
+			{
+				g++;
 				page++, a = a + 256, b = b + 256;
+				physicalPage[g] = page;
+				startAddress[g] = a;
+				endAddress[g] = b-1;
 			}
 			for (int j = 0; j < lengthOfProcessElements; j++)
 			{
 				if (i == randomAdressInsertProcess[j])
 				{
 					process = process1[j];
+					takenPhysicalAddress[j] = i;
+					takenPhysicalPage[j] = page;
+					takenPhysicalContent[j] = process;
 				}
 			}
 
 			physicaladdress[i] = i;
 			fprintf(physical, " 0x%X	|	%d	|	%c", i, page, process);
 			fprintf(physical, "\n");
-			process = "X";
-		
+			process ='-';		
 	}
 
 	//close file
 	fclose(physical);
+
+	//writing out to screen
+	printf("Below is the content and the addresses the content is put in for process 1");
+	printf("\n");
+	printf(" Address|	Frame	|	Content");
+	printf("\n");
+
+	for (int n = 0; n < 2764; n++)
+	{
+		printf("0x%X	|	%d	|	%c", takenPhysicalAddress[n], takenPhysicalPage[n], takenPhysicalContent[n]);
+		printf("\n");
+	}
+
+	//opening page entry to write to
+	FILE *pageEntry;
+	pageEntry = fopen("page_table.txt", "w");
+	if (pageEntry == NULL) {
+		printf("couldnt open");
+		exit(0);
+	}
+	fprintf(pageEntry, "Page	|	Page Table Entry");
+	fprintf(pageEntry, "\n");
+	for (int i = 0; i < 256; i++)
+	{
+		fprintf(pageEntry, "%d	|	0x%X - 0x%X",physicalPage[i],startAddress[i],endAddress[i]);
+		fprintf(pageEntry, "\n");
+	}
+
+	//closing
+	fclose(pageEntry);
 
 
 	//fillProcess();
@@ -111,30 +174,6 @@ int main()
 }
 int fillProcess()
 {
-	char process1[10] = { 'A','B','C','D','E','F' };
-	int physicalPage[256];
-
-	for (int i = 0; i < 256; i++)
-	{
-		physicalPage[i] = i;
-	}
-	printf("Proccess 1");
-	printf("\n");
-	printf("-----------");
-	printf("\n");
-	//int n = sizeof(process1);
-	int n = sizeof(process1) / sizeof(char);
-	int p = sizeof(physicalPage) / sizeof(int);
-
-	for (int i = 0; i <= n+1; i++)
-	{
-		int frame = rand() % (p - 1 + 1) + 1;
-
-		int Address = rand() %  (65536 - 60000 + 1) + 60000;
-		printf("0x%X | %d | %c ", Address, frame,  process1[i]);
-		printf("\n");
-	}
-
 	return 0;
 }
 int getPageNum()
