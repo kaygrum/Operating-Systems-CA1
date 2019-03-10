@@ -121,24 +121,41 @@ int main()
 			physicaladdress[i] = i;
 			fprintf(physical, " 0x%X	|	%d	|	%c", i, page, process);
 			fprintf(physical, "\n");
-			process ='-';		
+
+			//X means address is being used probably by another process, - means space is clear
+			int num = rand() % (10 - 0 + 1) + 0;
+			if (num % 2 == 0)
+			{
+				process = '-';
+			}
+			else
+			{
+				process = 'X';
+			}
 	}
 
 	//close file
 	fclose(physical);
 
 	//writing out to screen
-	printf("Below is the content and the addresses the content is put in for process 1");
-	printf("\n");
-	printf(" Address|	Frame	|	Content");
-	printf("\n");
+	FILE *takeAddresses;
+	takeAddresses = fopen("taken_addresses.txt", "w");
+	if (takeAddresses == NULL) {
+		printf("couldnt open");
+		exit(0);
+	}
+
+	fprintf(takeAddresses,"Below is the content and the addresses the content is put in for process 1");
+	fprintf(takeAddresses,"\n");
+	fprintf(takeAddresses," Address|	Frame	|	Content");
+	fprintf(takeAddresses,"\n");
 
 	for (int n = 0; n < 2764; n++)
 	{
-		printf("0x%X	|	%d	|	%c", takenPhysicalAddress[n], takenPhysicalPage[n], takenPhysicalContent[n]);
-		printf("\n");
+		fprintf(takeAddresses,"0x%X	|	%d	|	%c", takenPhysicalAddress[n], takenPhysicalPage[n], takenPhysicalContent[n]);
+		fprintf(takeAddresses,"\n");
 	}
-
+	fclose(takeAddresses);
 	//opening page entry to write to
 	FILE *pageEntry;
 	pageEntry = fopen("page_table.txt", "w");
@@ -158,18 +175,71 @@ int main()
 	fclose(pageEntry);
 
 
-	//fillProcess();
-	//int processPageTable[256];
-//	int virtualMemoryAddress[10];
-	
-//	int virtualMemoryToPhysicalPageTable[256];
-//	int virtualToPhysicalPage[256];
-//	int physicalMemorySpace[256];
-//	unsigned int addr = 0xFFFF;
-//	printf("%d", addr);
+	//virtual page to physical
+	int virtualPage[256];
+	int physicalPageB[256];
+	int usedPhysicalPages[256];
 
-	//getPageNum();
-	//getPageOffset();
+	for (int i = 0; i < 256; i++)
+	{
+		virtualPage[i] = i;
+		int num = rand() % (256 - 0) + 0;
+
+
+		for (int j = 0; j < 256; j++)
+		{
+			if (usedPhysicalPages[j] == num)
+			{
+				num = rand() % (256 - 0 + 1) + 0;
+			}
+		}
+		physicalPageB[i] = num;
+		usedPhysicalPages[i] = num;
+	}
+	FILE *vPageToPPage;
+	vPageToPPage = fopen("physical_to_virtual_page.txt", "w");
+	if (vPageToPPage == NULL) {
+		printf("couldnt open");
+		exit(0);
+	}
+	fprintf(vPageToPPage, "Virtual Page|	Physical Page");
+	fprintf(vPageToPPage, "\n");
+
+	for (int i = 0; i < 256; i++)
+	{
+		fprintf(vPageToPPage, "%d	|	%d",virtualPage[i], physicalPageB[i]);
+		fprintf(vPageToPPage, "\n");
+	}
+
+	//closing
+	fclose(vPageToPPage);
+
+
+	//User input
+	int hexNumber;
+	printf("What virtual address would you like to see the contents of? : ");
+	scanf("%X", hexNumber);
+	int page;
+	for (int i = 0; i < 65536; i++)
+	{
+		//were looking for the virtual page I know but the physical address alignment with the pages are the same.
+		if (hexNumber == takenPhysicalAddress[i])
+		{
+			page = takenPhysicalPage;
+		}
+	}
+	int vPage;
+	for (int i = 0; i < 256; i++)
+	{
+		if (virtualPage[i] == page)
+		{
+			vPage = physicalPageB[i];
+		}
+	}
+
+	//get offset;
+
+
 	return 0;
 }
 int fillProcess()
