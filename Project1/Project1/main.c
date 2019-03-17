@@ -50,6 +50,9 @@ int main()
 	int physicalPage[256];
 	int startAddress[256];
 	int endAddress[256];
+	//int fullListOfPAddresses[65536];
+	int fullListOfPFrame[65536];
+	int fullListOfPhyContent[65536];
 
 	FILE *readProcess1;
 	//char = 1 byte. 
@@ -60,18 +63,37 @@ int main()
 		printf("couldnt open");
 		exit(0);
 	}
+
+	int bytes;
+	printf("How many bytes would you like to have for your process? : ");
+	scanf("%d", &bytes);
+
 	char ch;
 	int i = 0;
 	while ((ch = fgetc(readProcess1)) != EOF) {
-		process1[i] = ch;
-		i++;
+		if (bytes == i)
+		{
+			break;
+		}
+		else {
+			process1[i] = ch;
+			i++;
+		}
 	}
 	fclose(readProcess1);
-
+	srand(time(NULL));
+	int randomStartingPage= rand() % (256 - 0 + 1) + 0;
+	for (int a = 0; a < 2000; a++)
+	{
+		// pages 0 and 1 kept for page info
+		randomStartingPage = rand() % (256 - 2 + 1) + 2;
+	}
+	int randomStartingAddress= randomStartingPage*256;
+	lengthOfProcessElements = bytes;
 	//generating random Address for process
 	for (int i = 0; i < lengthOfProcessElements; i++)
 	{
-		randomAdressInsertProcess[i]= rand() % (65536 - 0 + 1) + 0;
+		randomAdressInsertProcess[i]= i+ randomStartingAddress;
 	}
 
 
@@ -119,9 +141,15 @@ int main()
 			}
 
 			physicaladdress[i] = i;
+			if (i >= 0 && i < 512)
+			{
+				process = 'X';
+			}
 			fprintf(physical, " 0x%X	|	%d	|	%c", i, page, process);
 			fprintf(physical, "\n");
-
+			physicaladdress[i] = i;
+			fullListOfPFrame[i] = page;
+			fullListOfPhyContent[i] = process;
 			//X means address is being used probably by another process, - means space is clear
 			int num = rand() % (10 - 0 + 1) + 0;
 			if (num % 2 == 0)
@@ -132,6 +160,7 @@ int main()
 			{
 				process = 'X';
 			}
+
 	}
 
 	//close file
@@ -150,12 +179,13 @@ int main()
 	fprintf(takeAddresses," Address|	Frame	|	Content");
 	fprintf(takeAddresses,"\n");
 
-	for (int n = 0; n < 2764; n++)
+	for (int n = 0; n < bytes; n++)
 	{
 		fprintf(takeAddresses,"0x%X	|	%d	|	%c", takenPhysicalAddress[n], takenPhysicalPage[n], takenPhysicalContent[n]);
 		fprintf(takeAddresses,"\n");
 	}
 	fclose(takeAddresses);
+
 	//opening page entry to write to
 	FILE *pageEntry;
 	pageEntry = fopen("page_table.txt", "w");
@@ -178,23 +208,20 @@ int main()
 	//virtual page to physical
 	int virtualPage[256];
 	int physicalPageB[256];
-	int usedPhysicalPages[256];
-
+	int endVirtualPage = bytes / 256;
 	for (int i = 0; i < 256; i++)
 	{
-		virtualPage[i] = i;
-		int num = rand() % (256 - 0) + 0;
-
-
-		for (int j = 0; j < 256; j++)
+		if (endVirtualPage > (i - 1) && endVirtualPage <= i)
 		{
-			if (usedPhysicalPages[j] == num)
-			{
-				num = rand() % (256 - 0 + 1) + 0;
-			}
+			endVirtualPage = i;
 		}
-		physicalPageB[i] = num;
-		usedPhysicalPages[i] = num;
+	}
+
+
+	for (int i = 0; i < endVirtualPage+1; i++)
+	{
+		virtualPage[i] = i;
+		physicalPageB[i] = takenPhysicalPage[0] + i;
 	}
 	FILE *vPageToPPage;
 	vPageToPPage = fopen("physical_to_virtual_page.txt", "w");
@@ -205,7 +232,7 @@ int main()
 	fprintf(vPageToPPage, "Virtual Page|	Physical Page");
 	fprintf(vPageToPPage, "\n");
 
-	for (int i = 0; i < 256; i++)
+	for (int i = 0; i < endVirtualPage+1; i++)
 	{
 		fprintf(vPageToPPage, "%d	|	%d",virtualPage[i], physicalPageB[i]);
 		fprintf(vPageToPPage, "\n");
@@ -216,29 +243,40 @@ int main()
 
 
 	//User input
-	int hexNumber;
-	printf("What virtual address would you like to see the contents of? : ");
-	scanf("%X", hexNumber);
-	int page;
-	for (int i = 0; i < 65536; i++)
-	{
-		//were looking for the virtual page I know but the physical address alignment with the pages are the same.
-		if (hexNumber == takenPhysicalAddress[i])
-		{
-			page = takenPhysicalPage;
-		}
-	}
-	int vPage;
-	for (int i = 0; i < 256; i++)
-	{
-		if (virtualPage[i] == page)
-		{
-			vPage = physicalPageB[i];
-		}
-	}
 
-	//get offset;
+	int hexNumber=NULL;
+	int mask = 0x00FF;
+	printf("What virtual address would you like to see the contents of? \nTo exit type -1 \n: ");
+	scanf("%x", &hexNumber);
+	while (hexNumber != -1)
+	{
+		int offset = hexNumber & mask;
+		int pageNum = hexNumber >> 8;
+		int physicalPageC = 0;
+		int physicalAddress;
 
+		for (int i = 0; i < endVirtualPage + 1; i++)
+		{
+			if (pageNum == virtualPage[i])
+			{
+				physicalPageC = physicalPageB[i];
+			}
+		}
+		physicalAddress = (physicalPageC << 8) + (offset);
+		char contentWanted;
+
+		for (int i = 0; i < 65536; i++)
+		{
+			if (physicaladdress[i] == physicalAddress)
+			{
+				contentWanted = fullListOfPhyContent[i];
+			}
+		}
+		printf("\n That virtual Address leads to physical address 0x%X and the contents are %c \n NOTE: if a blank appears it just means a the character is a space.\n \n", physicalAddress, contentWanted);
+		
+		printf("What virtual address would you like to see the contents of? \nTo exit type -1 \n: ");
+		scanf("%x", &hexNumber);
+	}
 
 	return 0;
 }
