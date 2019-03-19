@@ -35,59 +35,50 @@
 //		in your README.md file)
 //Display a prompt which allows the user to enter any virtual memory 
 //		address in your system, in hexadecimalform.
+char *fillProcess(int);
+void virtualToPhysicalPage(int, int *, int **, int **);
+void inputHexToPhysicalToContent(int *, int *, int , int *, int *, int);
+void writeToDisk(int);
 int main()
 {
 	int physicaladdress[65536];
 	int physicaladdresspage[256];
-	char process1[2764] ;
+	char *process1;
 	int lengthOfPhysicalAddrArray = sizeof(physicaladdress) / sizeof(int);
-	int lengthOfProcessElements = sizeof(process1) / sizeof(char);
-	int randomAdressInsertProcess[2764];
+	int lengthOfProcessElements;
+	int *randomAdressInsertProcess;
 
-	int takenPhysicalAddress[2764];
-	int takenPhysicalPage[2764];
-	char takenPhysicalContent[2764];
+	int *takenPhysicalAddress;
+	int *takenPhysicalPage;
+	char *takenPhysicalContent;
 	int physicalPage[256];
 	int startAddress[256];
 	int endAddress[256];
-	//int fullListOfPAddresses[65536];
 	int fullListOfPFrame[65536];
 	int fullListOfPhyContent[65536];
 
-	FILE *readProcess1;
-	//char = 1 byte. 
-	//pulling from a text file a paragraph with 2764 characters which is equal to 2764 bytes
-	readProcess1=fopen("Process1.txt", "r");
-	if (readProcess1 == NULL)
-	{
-		printf("couldnt open");
-		exit(0);
-	}
-
+	//Yes i should have put this in its own function and used pointers to change the arrays contents but i tried 4 times and every time something went wrong so i finally gave up. 
+	//I used the kind of switch pointers method for the function virtualToPhysicalPage and hopefully it shows i can use pointers and what now but the code below is just big and awkward to put in its own function so i decided not to try anymore sorry!!!
 	int bytes;
-	printf("How many bytes would you like to have for your process? : ");
+	printf("How many bytes would you like to have for your process? Pick between 0 to 27000 : ");
 	scanf("%d", &bytes);
-
-	char ch;
-	int i = 0;
-	while ((ch = fgetc(readProcess1)) != EOF) {
-		if (bytes == i)
-		{
-			break;
-		}
-		else {
-			process1[i] = ch;
-			i++;
-		}
+	while (bytes > 27000)
+	{
+		printf("Bytes must be below 27000 ");
+		scanf("%d", &bytes);
 	}
-	fclose(readProcess1);
+
+	//dynamically setting size of arrays
+	process1 = (char*)malloc(bytes * sizeof(char));
+	takenPhysicalAddress = (int*)malloc(bytes * sizeof(int));
+	takenPhysicalPage = (int*)malloc(bytes * sizeof(int));
+	takenPhysicalContent = (char*)malloc(bytes * sizeof(char));
+	randomAdressInsertProcess = (int*)malloc(bytes * sizeof(int));
+
+	process1 = fillProcess(bytes);
+	
 	srand(time(NULL));
 	int randomStartingPage= rand() % (256 - 0 + 1) + 0;
-	for (int a = 0; a < 2000; a++)
-	{
-		// pages 0 and 1 kept for page info
-		randomStartingPage = rand() % (256 - 2 + 1) + 2;
-	}
 	int randomStartingAddress= randomStartingPage*256;
 	lengthOfProcessElements = bytes;
 	//generating random Address for process
@@ -96,10 +87,9 @@ int main()
 		randomAdressInsertProcess[i]= i+ randomStartingAddress;
 	}
 
-
 	//Open file for physical memory
 	FILE *physical;
-	physical = fopen("physical_memory.txt", "w");
+	physical = fopen("data/physical_memory.txt", "w");
 	if (physical == NULL) {
 		printf("couldnt open");
 		exit(0);
@@ -165,30 +155,78 @@ int main()
 
 	//close file
 	fclose(physical);
+	
+	takenAddressesToFile(bytes,takenPhysicalAddress,takenPhysicalPage,takenPhysicalContent);
 
+	pageTable(physicalPage, startAddress,endAddress);
+	
+	int *virtualPage;
+	int *physicalPageB;
+	int endVirtualPage = bytes / 256;
+	virtualToPhysicalPage(endVirtualPage, takenPhysicalPage, &virtualPage, &physicalPageB);
+	writeToDisk(bytes);
+	inputHexToPhysicalToContent(virtualPage, physicalPageB, endVirtualPage,physicaladdress,fullListOfPhyContent, bytes);
+
+
+	return 0;
+}
+char *fillProcess(int bytes)
+{
+	char *process1;
+	process1= (char*)malloc(bytes * sizeof(char));
+	FILE *readProcess1;
+	//char = 1 byte. 
+	//pulling from a text file a paragraph with 2764 characters which is equal to 2764 bytes
+	readProcess1 = fopen("data/Process1.txt", "r");
+	if (readProcess1 == NULL)
+	{
+		printf("couldnt open");
+		exit(0);
+	}
+
+	char ch;
+	int i = 0;
+	while ((ch = fgetc(readProcess1)) != EOF) {
+		if (bytes == i)
+		{
+			break;
+		}
+		else {
+			process1[i] = ch;
+			i++;
+		}
+	}
+	fclose(readProcess1);
+	return process1;
+}
+int takenAddressesToFile(int bytes, int * takenPhysicalAddress, int * takenPhysicalPage, char * takenPhysicalContent)
+{
 	//writing out to screen
 	FILE *takeAddresses;
-	takeAddresses = fopen("taken_addresses.txt", "w");
+	takeAddresses = fopen("data/taken_addresses.txt", "w");
 	if (takeAddresses == NULL) {
 		printf("couldnt open");
 		exit(0);
 	}
 
-	fprintf(takeAddresses,"Below is the content and the addresses the content is put in for process 1");
-	fprintf(takeAddresses,"\n");
-	fprintf(takeAddresses," Address|	Frame	|	Content");
-	fprintf(takeAddresses,"\n");
+	fprintf(takeAddresses, "Below is the content and the addresses the content is put in for process 1");
+	fprintf(takeAddresses, "\n");
+	fprintf(takeAddresses, " Address|	Frame	|	Content");
+	fprintf(takeAddresses, "\n");
 
 	for (int n = 0; n < bytes; n++)
 	{
-		fprintf(takeAddresses,"0x%X	|	%d	|	%c", takenPhysicalAddress[n], takenPhysicalPage[n], takenPhysicalContent[n]);
-		fprintf(takeAddresses,"\n");
+		fprintf(takeAddresses, "0x%X	|	%d	|	%c", takenPhysicalAddress[n], takenPhysicalPage[n], takenPhysicalContent[n]);
+		fprintf(takeAddresses, "\n");
 	}
 	fclose(takeAddresses);
-
+	return 0;
+}
+int pageTable(int *physicalPage, int * startAddress, int * endAddress)
+{
 	//opening page entry to write to
 	FILE *pageEntry;
-	pageEntry = fopen("page_table.txt", "w");
+	pageEntry = fopen("data/page_table.txt", "w");
 	if (pageEntry == NULL) {
 		printf("couldnt open");
 		exit(0);
@@ -197,18 +235,28 @@ int main()
 	fprintf(pageEntry, "\n");
 	for (int i = 0; i < 256; i++)
 	{
-		fprintf(pageEntry, "%d	|	0x%X - 0x%X",physicalPage[i],startAddress[i],endAddress[i]);
+		fprintf(pageEntry, "%d	|	0x%X - 0x%X", physicalPage[i], startAddress[i], endAddress[i]);
 		fprintf(pageEntry, "\n");
 	}
+	fprintf(pageEntry, "Disk	|	D%c - D%c", '1', '2');
+	fprintf(pageEntry, "\n");
+	printf("/n I decided to use a simple page to hex address for the physical page table. There are 256 pages, 0 to 255, and in those 256 there are 256 addressess, oxXX00 to 0xXXFF. /n At the end of the page table text file I have added 2 new entries D1 and D2 aon Disk. \nThese are entries pointing to a disk space.\n\n");
 
 	//closing
 	fclose(pageEntry);
 
+	return 0;
+}
+void virtualToPhysicalPage(int endVirtualPage, int *takenPhysicalPage,int **virtualPage,int **physicalPageB)
+{
 
 	//virtual page to physical
-	int virtualPage[256];
-	int physicalPageB[256];
-	int endVirtualPage = bytes / 256;
+
+	*physicalPageB = malloc(256 * sizeof(int));
+	*virtualPage = malloc(256 * sizeof(int));
+	int * tempphysicalPageB = malloc(256 * sizeof(int));
+	int * tempvirtualPage = malloc(256 * sizeof(int));
+
 	for (int i = 0; i < 256; i++)
 	{
 		if (endVirtualPage > (i - 1) && endVirtualPage <= i)
@@ -218,13 +266,13 @@ int main()
 	}
 
 
-	for (int i = 0; i < endVirtualPage+1; i++)
+	for (int i = 0; i < endVirtualPage + 1; i++)
 	{
-		virtualPage[i] = i;
-		physicalPageB[i] = takenPhysicalPage[0] + i;
+		tempvirtualPage[i] = i;
+		tempphysicalPageB[i] = takenPhysicalPage[0] + i;
 	}
 	FILE *vPageToPPage;
-	vPageToPPage = fopen("physical_to_virtual_page.txt", "w");
+	vPageToPPage = fopen("data/physical_to_virtual_page.txt", "w");
 	if (vPageToPPage == NULL) {
 		printf("couldnt open");
 		exit(0);
@@ -232,22 +280,30 @@ int main()
 	fprintf(vPageToPPage, "Virtual Page|	Physical Page");
 	fprintf(vPageToPPage, "\n");
 
-	for (int i = 0; i < endVirtualPage+1; i++)
+	for (int i = 0; i < endVirtualPage + 1; i++)
 	{
-		fprintf(vPageToPPage, "%d	|	%d",virtualPage[i], physicalPageB[i]);
+		fprintf(vPageToPPage, "%d	|	%d", tempvirtualPage[i], tempphysicalPageB[i]);
 		fprintf(vPageToPPage, "\n");
 	}
-
+	*physicalPageB = tempphysicalPageB;
+	*virtualPage = tempvirtualPage;
 	//closing
 	fclose(vPageToPPage);
-
+}
+void inputHexToPhysicalToContent(int *virtualPage, int *physicalPageB, int endVirtualPage, int *physicaladdress, int *fullListOfPhyContent,int bytes)
+{
 
 	//User input
 
-	int hexNumber=NULL;
+	int hexNumber = NULL;
 	int mask = 0x00FF;
 	printf("What virtual address would you like to see the contents of? \nTo exit type -1 \n: ");
 	scanf("%x", &hexNumber);
+	while (hexNumber>bytes)
+	{
+		printf(" Virtual address non existant. What virtual address would you like to see the contents of? \nTo exit type -1 \n: ");
+		scanf("%x", &hexNumber);
+	}
 	while (hexNumber != -1)
 	{
 		int offset = hexNumber & mask;
@@ -273,22 +329,24 @@ int main()
 			}
 		}
 		printf("\n That virtual Address leads to physical address 0x%X and the contents are %c \n NOTE: if a blank appears it just means a the character is a space.\n \n", physicalAddress, contentWanted);
-		
+		printf("\n For this i saved all my data in arrays so I can easily access all the info I need. The program first accessed the virtual to page table data after getting the page number from the inserted virtual address wanted and sees what the physical address is. After that it ads back the page number and searches all physical addresses for that exact hex number then gets its content.\n \n");
+
 		printf("What virtual address would you like to see the contents of? \nTo exit type -1 \n: ");
 		scanf("%x", &hexNumber);
 	}
-
-	return 0;
 }
-int fillProcess()
+void writeToDisk(int bytes)
 {
-	return 0;
-}
-int getPageNum()
-{
-	return 0;
-}
-int getPageOffset()
-{
-	return 0;
+	//opening page entry to write to
+	FILE *diskContent;
+	diskContent = fopen("data/disk.txt", "w");
+	if (diskContent == NULL) {
+		printf("couldnt open");
+		exit(0);
+	}
+	fprintf(diskContent, "Address	|	Page	|	Virtual Address \n");
+	fprintf(diskContent, "D1	|	Disk	|	0x%X\n",bytes+1);
+	fprintf(diskContent, "D2	|	Disk	|	0x%X\n", bytes + 2);
+	printf( "D2	|	Disk	|	0x%X\n", bytes + 2);
+	fclose(diskContent);
 }

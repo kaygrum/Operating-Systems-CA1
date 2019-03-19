@@ -255,3 +255,4 @@ Page	|	Page Table Entry
 253	|	0xFD00 - 0xFDFF
 254	|	0xFE00 - 0xFEFF
 255	|	0xFF00 - 0xFFFF
+Disk	|	D1 - D2

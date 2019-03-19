@@ -1,5 +1,7 @@
 ﻿  main.c
-e:\college\4th year\operatoing systems\ca1\project1\project1\main.c(84): warning C4013: 'time' undefined; assuming extern returning int
-e:\college\4th year\operatoing systems\ca1\project1\project1\main.c(247): warning C4047: 'initializing': 'int' differs in levels of indirection from 'void *'
-e:\college\4th year\operatoing systems\ca1\project1\project1\main.c(41): warning C4101: 'physicaladdresspage': unreferenced local variable
+e:\college\4th year\operatoing systems\ca1\project1\project1\main.c(80): warning C4013: 'time' undefined; assuming extern returning int
+e:\college\4th year\operatoing systems\ca1\project1\project1\main.c(159): warning C4013: 'takenAddressesToFile' undefined; assuming extern returning int
+e:\college\4th year\operatoing systems\ca1\project1\project1\main.c(161): warning C4013: 'pageTable' undefined; assuming extern returning int
+e:\college\4th year\operatoing systems\ca1\project1\project1\main.c(45): warning C4101: 'physicaladdresspage': unreferenced local variable
+e:\college\4th year\operatoing systems\ca1\project1\project1\main.c(298): warning C4047: 'initializing': 'int' differs in levels of indirection from 'void *'
   Project1.vcxproj -> E:\College\4th year\Operatoing Systems\CA1\Project1\Debug\Project1.exe
